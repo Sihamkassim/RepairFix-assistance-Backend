@@ -41,7 +41,13 @@ Please provide general repair advice based on your knowledge. Include:
     console.log('✅ Response generated');
     return { response };
   } catch (error) {
-    console.error('Response generation error:', error);
+    console.error('❌ Response generation error:', {
+      message: error.message,
+      name: error.name,
+      code: error.code,
+      status: error.status,
+      stack: error.stack?.split('\n').slice(0, 3).join('\n')
+    });
     
     // Provide a helpful fallback response when AI fails
     const fallbackResponse = `I'm having trouble generating a detailed response right now. 

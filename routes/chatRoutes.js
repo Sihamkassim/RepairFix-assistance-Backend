@@ -143,9 +143,14 @@ router.get('/stream', async (req, res) => {
     }
 
     // Save assistant message to DB
-    console.log('📝 Saving assistant message...', { conversationId: finalState.conversationId, responseLength: fullResponseText?.length });
+    console.log('📝 Saving assistant message...', { 
+      resolvedConversationId,
+      finalStateConversationId: finalState.conversationId, 
+      responseLength: fullResponseText?.length 
+    });
     
     const conversationIdToSave = resolvedConversationId || finalState.conversationId || null;
+    console.log('🔑 Final conversationIdToSave:', conversationIdToSave);
 
     if (conversationIdToSave && fullResponseText) {
       try {

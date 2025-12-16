@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import { connectDB } from './config/db.js';
 import { clerk } from './config/clerk.js';
+import { runMigrations } from './migrations/migrate.js';
 import apiRoutes from './routes/index.js';
 
 // Load environment variables
@@ -11,8 +12,13 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Connect to database
-connectDB();
+// Connect to database and run migrations
+const initializeDatabase = async () => {
+  await connectDB();
+  await runMigrations();
+};
+
+initializeDatabase().catch(console.error);
 
 // Middleware
 app.use(cors({

@@ -1,11 +1,15 @@
 import express from 'express';
-import { protect } from '../middleware/auth.js';
-import { getUserProfile, getProtectedData } from '../controllers/userController.js';
+import { protect, getAuthUser } from '../middleware/auth.js';
+import { getUserProfile, getUserConversations, getUserUsage } from '../controllers/userController.js';
 
 const router = express.Router();
 
-// Protected routes
-router.get('/profile', protect, getUserProfile);
-router.get('/protected', protect, getProtectedData);
+// All routes require authentication and auto-create user if needed
+router.use(protect, getAuthUser);
+
+// User routes
+router.get('/profile', getUserProfile);
+router.get('/conversations', getUserConversations);
+router.get('/usage', getUserUsage);
 
 export default router;

@@ -23,11 +23,17 @@
   "dependencies": {
     "@clerk/clerk-sdk-node": "^4.13.23",
     "@clerk/express": "^1.7.57",
+    "@google/generative-ai": "^0.24.1",
+    "@langchain/core": "^1.1.5",
+    "@langchain/google-genai": "^2.1.0",
+    "@langchain/langgraph": "^1.0.4",
+    "@tavily/core": "^0.6.1",
     "axios": "^1.13.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",
     "express": "^5.2.1",
+    "langchain": "^1.2.0",
     "pg": "^8.16.3"
   },
   "devDependencies": {

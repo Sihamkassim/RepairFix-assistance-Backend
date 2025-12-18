@@ -174,21 +174,35 @@ export const Usage = {
   // Update token usage
   async incrementTokens(userId, tokensUsed) {
     const query = `
-      UPDATE usage 
-      SET total_tokens = total_tokens + $1, last_used = NOW() 
-      WHERE user_id = $2 
+      INSERT INTO usage (user_id, total_tokens, daily_tokens, last_used)
+      VALUES ($1, $2, $2, NOW())
+      ON CONFLICT (user_id) DO UPDATE 
+      SET 
+        total_tokens = usage.total_tokens + $2,
+        daily_tokens = CASE 
+          WHEN DATE(usage.last_used) < CURRENT_DATE THEN $2
+          ELSE usage.daily_tokens + $2
+        END,
+        last_used = NOW()
       RETURNING *
     `;
-    const result = await pool.query(query, [tokensUsed, userId]);
+    const result = await pool.query(query, [userId, tokensUsed]);
     return result.rows[0];
   },
 
   // Increment conversation count
   async incrementConversations(userId) {
     const query = `
-      UPDATE usage 
-      SET total_conversations = total_conversations + 1, last_used = NOW() 
-      WHERE user_id = $1 
+      INSERT INTO usage (user_id, total_conversations, last_used)
+      VALUES ($1, 1, NOW())
+      ON CONFLICT (user_id) DO UPDATE 
+      SET 
+        total_conversations = usage.total_conversations + 1,
+        daily_tokens = CASE 
+          WHEN DATE(usage.last_used) < CURRENT_DATE THEN 0
+          ELSE usage.daily_tokens
+        END,
+        last_used = NOW()
       RETURNING *
     `;
     const result = await pool.query(query, [userId]);
@@ -198,9 +212,16 @@ export const Usage = {
   // Increment message count
   async incrementMessages(userId) {
     const query = `
-      UPDATE usage 
-      SET total_messages = total_messages + 1, last_used = NOW() 
-      WHERE user_id = $1 
+      INSERT INTO usage (user_id, total_messages, last_used)
+      VALUES ($1, 1, NOW())
+      ON CONFLICT (user_id) DO UPDATE 
+      SET 
+        total_messages = usage.total_messages + 1,
+        daily_tokens = CASE 
+          WHEN DATE(usage.last_used) < CURRENT_DATE THEN 0
+          ELSE usage.daily_tokens
+        END,
+        last_used = NOW()
       RETURNING *
     `;
     const result = await pool.query(query, [userId]);
@@ -209,7 +230,20 @@ export const Usage = {
 
   // Get usage stats for a user
   async findByUserId(userId) {
-    const query = 'SELECT * FROM usage WHERE user_id = $1';
+    const query = `
+      SELECT 
+        user_id, 
+        total_tokens, 
+        total_conversations, 
+        total_messages,
+        CASE 
+          WHEN DATE(last_used) < CURRENT_DATE THEN 0
+          ELSE daily_tokens
+        END as daily_tokens,
+        last_used
+      FROM usage 
+      WHERE user_id = $1
+    `;
     const result = await pool.query(query, [userId]);
     return result.rows[0];
   }

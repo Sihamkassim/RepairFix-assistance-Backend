@@ -67,12 +67,22 @@ export const runMigrations = async () => {
       CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at DESC)
     `);
     
-    // Create update trigger function
+    // Create update trigger functions
     await client.query(`
       CREATE OR REPLACE FUNCTION update_updated_at_column()
       RETURNS TRIGGER AS $$
       BEGIN
         NEW.updated_at = NOW();
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql
+    `);
+
+    await client.query(`
+      CREATE OR REPLACE FUNCTION update_last_updated_column()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        NEW.last_updated = NOW();
         RETURN NEW;
       END;
       $$ LANGUAGE plpgsql
@@ -92,7 +102,7 @@ export const runMigrations = async () => {
       CREATE TRIGGER update_conversations_last_updated
         BEFORE UPDATE ON conversations
         FOR EACH ROW
-        EXECUTE FUNCTION update_updated_at_column()
+        EXECUTE FUNCTION update_last_updated_column()
     `);
     
     await client.query('COMMIT');

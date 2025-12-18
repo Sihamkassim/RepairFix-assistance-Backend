@@ -35,12 +35,12 @@ export async function saveToDBNode(state) {
     await Message.create(conversationId, 'user', state.userMessage);
     await Usage.incrementMessages(state.userId);
 
-    // Update token usage (approximate based on content length)
-    const estimatedTokens = Math.ceil((state.userMessage.length + (typeof state.response === 'string' ? state.response.length : 0)) / 4);
-    await Usage.incrementTokens(state.userId, estimatedTokens);
+    // Update token usage (approximate based on user message)
+    const userTokens = Math.ceil(state.userMessage.length / 4);
+    await Usage.incrementTokens(state.userId, userTokens);
 
     console.log('✅ Saved to database, returning conversationId:', conversationId);
-    return { conversationId, tokensUsed: estimatedTokens };
+    return { conversationId, tokensUsed: userTokens };
   } catch (error) {
     console.error('❌ Database save error:', error);
     // Return null conversationId if save fails, but don't crash the workflow

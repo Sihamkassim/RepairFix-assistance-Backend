@@ -34,6 +34,19 @@ router.get('/stream', async (req, res) => {
   let resolvedConversationId = conversationId ? parseInt(conversationId) : null;
 
   try {
+    // Check daily usage limit (10,000 tokens)
+    const usage = await Usage.findByUserId(userId);
+    const DAILY_LIMIT = 10000;
+    
+    if (usage && usage.daily_tokens >= DAILY_LIMIT) {
+      console.warn(`⚠️ User ${userId} has exceeded daily token limit: ${usage.daily_tokens}/${DAILY_LIMIT}`);
+      res.write(`data: ${JSON.stringify({ 
+        type: 'error', 
+        message: 'You have reached your daily limit of 10,000 tokens. Please try again tomorrow.' 
+      })}\n\n`);
+      return res.end();
+    }
+
     // Initialize agent state
     console.log('🚀 Starting workflow for user:', userId, 'message:', message.substring(0, 50) + '...');
     
@@ -152,19 +165,25 @@ router.get('/stream', async (req, res) => {
     const conversationIdToSave = resolvedConversationId || finalState.conversationId || null;
     console.log('🔑 Final conversationIdToSave:', conversationIdToSave);
 
+    let assistantTokens = 0;
+    if (fullResponseText) {
+      assistantTokens = Math.ceil(fullResponseText.length / 4);
+    }
+
     if (conversationIdToSave && fullResponseText) {
       try {
         await Message.create(conversationIdToSave, 'assistant', fullResponseText);
         await Usage.incrementMessages(userId);
+        await Usage.incrementTokens(userId, assistantTokens);
         await Conversation.touch(conversationIdToSave);
-        console.log('✅ Saved assistant message to database');
+        console.log('✅ Saved assistant message and updated usage');
       } catch (dbError) {
         console.error('❌ Database save error:', dbError);
         // Don't fail the request if DB save fails
       }
     } else {
       console.warn('⚠️ Could not save assistant message:', { 
-        hasConversationId: !!finalState.conversationId, 
+        hasConversationId: !!conversationIdToSave, 
         hasResponse: !!fullResponseText 
       });
     }
@@ -173,7 +192,7 @@ router.get('/stream', async (req, res) => {
     res.write(`data: ${JSON.stringify({ 
       type: 'done', 
       conversationId: conversationIdToSave,
-      tokensUsed: finalState.tokensUsed || 0
+      tokensUsed: (finalState.tokensUsed || 0) + assistantTokens
     })}\n\n`);
 
     res.end();

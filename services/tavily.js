@@ -28,10 +28,13 @@ export const tavilyService = {
 
     try {
       const response = await tavilyClient.search(query, {
-        searchDepth: 'basic',
+        searchDepth: 'advanced',
         maxResults: 5,
         includeImages: true,
+        includeImageDescriptions: true,
       });
+
+      console.log('📸 Tavily response images:', response.images?.length || 0);
 
       return {
         results: response.results?.map(result => ({
@@ -40,7 +43,7 @@ export const tavilyService = {
           content: result.content,
           score: result.score,
         })) || [],
-        images: response.images?.slice(0, 3) || [],
+        images: response.images?.slice(0, 5) || [],
       };
     } catch (error) {
       console.error('Tavily search error:', error.message);
@@ -62,18 +65,24 @@ export const tavilyService = {
     let markdown = `# Search Results for "${query}"\n\n`;
     markdown += `I couldn't find an official iFixit guide, but here are some relevant resources:\n\n`;
 
-    searchResults.results.forEach((result, index) => {
-      markdown += `## ${index + 1}. ${result.title}\n\n`;
-      markdown += `${result.content}\n\n`;
-      markdown += `[Read more](${result.url})\n\n`;
-    });
-
+    // Add images at the top if available
     if (searchResults.images && searchResults.images.length > 0) {
-      markdown += `## Related Images\n\n`;
-      searchResults.images.forEach(img => {
-        markdown += `![Related image](${img})\n\n`;
+      markdown += `## 📸 Reference Images\n\n`;
+      searchResults.images.forEach((img, index) => {
+        // Handle both string URLs and object formats
+        const imageUrl = typeof img === 'string' ? img : img.url;
+        if (imageUrl) {
+          markdown += `![Reference image ${index + 1}](${imageUrl})\n\n`;
+        }
       });
     }
+
+    markdown += `## 📋 Resources\n\n`;
+    searchResults.results.forEach((result, index) => {
+      markdown += `### ${index + 1}. ${result.title}\n\n`;
+      markdown += `${result.content}\n\n`;
+      markdown += `🔗 [Read more](${result.url})\n\n`;
+    });
 
     return markdown;
   },

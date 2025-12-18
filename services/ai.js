@@ -12,7 +12,7 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 // Initialize Gemini model
 export const createGeminiModel = (streaming = true) => {
   const apiKey = process.env.GOOGLE_API_KEY;
-  const modelName = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+  const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
   
   console.log('🔑 Gemini API Key Check:', { 
     exists: !!apiKey, 
@@ -31,7 +31,8 @@ export const createGeminiModel = (streaming = true) => {
     model: modelName,
     temperature: 0.7,
     streaming: streaming,
-    maxRetries: 3,
+    maxRetries: 5,
+    maxOutputTokens: 8192,
   });
 };
 
@@ -69,12 +70,20 @@ Your role:
 - Be safety-conscious and warn about risks
 - Be encouraging and supportive
 - Format your responses with proper markdown including headers, lists, and images
-- If images are provided, reference them in your steps
+
+**CRITICAL: IMAGE HANDLING**
+- You MUST include ALL images from the repair guide in your response
+- Images are provided in markdown format: ![alt text](image_url)
+- Copy the EXACT image markdown syntax into your response at the appropriate steps
+- Place images BEFORE or AFTER the step instructions they relate to
+- Do NOT describe images in text - include the actual markdown image tag
+- Do NOT skip or summarize away the images
 
 Guidelines:
 - Always start with safety warnings if applicable
-- List tools and parts needed
+- List tools and parts needed (include tool images if provided)
 - Break down complex steps into smaller sub-steps
+- Include the corresponding image(s) for each step
 - Use emojis sparingly for clarity (⚠️ for warnings, ✅ for completion)
 - End with encouragement and offer to answer follow-up questions`,
 };

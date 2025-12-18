@@ -8,10 +8,12 @@ export async function fallbackSearchNode(state) {
   console.log('🌐 Node 6: Performing fallback search...');
 
   try {
-    // Ensure we have a valid query
+    // Ensure we have a valid query - be more specific for better image results
     let query = state.userMessage;
     if (state.device && state.issue) {
-      query = `${state.device} ${state.issue} repair guide`;
+      query = `${state.device} ${state.issue} repair guide tutorial with images`;
+    } else if (state.device) {
+      query = `${state.device} repair guide tutorial with images`;
     }
     
     if (!query) {
@@ -19,10 +21,11 @@ export async function fallbackSearchNode(state) {
       return { fallbackResults: null };
     }
 
+    console.log('🔍 Fallback search query:', query);
     const results = await tavilyService.search(query);
 
     if (results.results && results.results.length > 0) {
-      console.log(`✅ Found ${results.results.length} fallback result(s)`);
+      console.log(`✅ Found ${results.results.length} fallback result(s), ${results.images?.length || 0} images`);
       return { fallbackResults: results };
     }
     

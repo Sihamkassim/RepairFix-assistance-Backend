@@ -37,29 +37,47 @@ export const Conversation = {
     const query = `
       INSERT INTO conversations (user_id, title)
       VALUES ($1, $2)
-      RETURNING *
+      RETURNING *, last_updated AT TIME ZONE 'UTC' AS last_updated_utc
     `;
     const result = await pool.query(query, [userId, title]);
-    return result.rows[0];
+    const row = result.rows[0];
+    // Use UTC timestamp for consistency
+    if (row.last_updated_utc) {
+      row.last_updated = new Date(row.last_updated_utc + 'Z').toISOString();
+    }
+    return row;
   },
 
   // Get conversation by ID
   async findById(conversationId) {
-    const query = 'SELECT * FROM conversations WHERE id = $1';
+    const query = `
+      SELECT *, last_updated AT TIME ZONE 'UTC' AS last_updated_utc 
+      FROM conversations WHERE id = $1
+    `;
     const result = await pool.query(query, [conversationId]);
-    return result.rows[0];
+    const row = result.rows[0];
+    if (row?.last_updated_utc) {
+      row.last_updated = new Date(row.last_updated_utc + 'Z').toISOString();
+    }
+    return row;
   },
 
   // Get all conversations for a user
   async findByUserId(userId, limit = 50) {
     const query = `
-      SELECT * FROM conversations 
+      SELECT *, last_updated AT TIME ZONE 'UTC' AS last_updated_utc 
+      FROM conversations 
       WHERE user_id = $1 
       ORDER BY last_updated DESC 
       LIMIT $2
     `;
     const result = await pool.query(query, [userId, limit]);
-    return result.rows;
+    return result.rows.map(row => {
+      if (row.last_updated_utc) {
+        row.last_updated = new Date(row.last_updated_utc + 'Z').toISOString();
+      }
+      return row;
+    });
   },
 
   // Update conversation title
@@ -80,10 +98,14 @@ export const Conversation = {
       UPDATE conversations 
       SET last_updated = NOW() 
       WHERE id = $1 
-      RETURNING *
+      RETURNING *, last_updated AT TIME ZONE 'UTC' AS last_updated_utc
     `;
     const result = await pool.query(query, [conversationId]);
-    return result.rows[0];
+    const row = result.rows[0];
+    if (row?.last_updated_utc) {
+      row.last_updated = new Date(row.last_updated_utc + 'Z').toISOString();
+    }
+    return row;
   },
 
   // Delete conversation

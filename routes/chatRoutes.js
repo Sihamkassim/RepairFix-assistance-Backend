@@ -34,15 +34,15 @@ router.get('/stream', async (req, res) => {
   let resolvedConversationId = conversationId ? parseInt(conversationId) : null;
 
   try {
-    // Check daily usage limit (10,000 tokens)
+    // Check daily usage limit (90,000 tokens)
     const usage = await Usage.findByUserId(userId);
-    const DAILY_LIMIT = 10000;
+    const DAILY_LIMIT = 90000;
     
     if (usage && usage.daily_tokens >= DAILY_LIMIT) {
       console.warn(`⚠️ User ${userId} has exceeded daily token limit: ${usage.daily_tokens}/${DAILY_LIMIT}`);
       res.write(`data: ${JSON.stringify({ 
         type: 'error', 
-        message: 'You have reached your daily limit of 10,000 tokens. Please try again tomorrow.' 
+        message: 'You have reached your daily limit of 90,000 tokens. Please try again tomorrow.' 
       })}\n\n`);
       return res.end();
     }
